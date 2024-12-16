@@ -1,0 +1,40 @@
+NB + 10:
+    acc: 0.567
+    precision: 0.659
+    recall: 0.567
+    f1: 0.609   
+
+NB + 20:
+    acc: 0.592
+    precision: 0.623
+    recall: 0.592
+    f1: 0.607
+
+LogReg + 10:
+    acc: 0.167, 0.358, 0.167
+    precision: 0.028, 0.362, 0.028
+    recall: 0.167, 0.358, 0.167
+    f1: 0.048, 0.36, 0.048
+
+LogReg + 20:
+    acc: 0.283, 0.25, 0.167
+    precision: 0.325, 0.295, 0.028
+    recall: 0.283, 0.25, 0.167
+    f1: 0.303, 0.271, 0.048
+
+Word counts:
+    health10: 1710
+    history10: 1979
+    religion10: 1857
+    science10: 2221
+    technology10: 1167
+    thearts10: 1445
+    average: 1396.5
+
+    health20: 3101
+    history20: 2929
+    religion20: 3492
+    science20: 3252
+    technology20: 2947
+    thearts20: 3027
+    average: 3124.667

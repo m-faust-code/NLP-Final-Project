@@ -1,0 +1,136 @@
+% This must be in the first 5 lines to tell arXiv to use pdfLaTeX, which is strongly recommended.
+\pdfoutput=1
+% In particular, the hyperref package requires pdfLaTeX in order to break URLs across lines.
+
+\documentclass[11pt]{article}
+
+% Remove the "review" option to generate the final version.
+\usepackage{ACL2023}
+
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
+
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+% For Vietnamese characters
+% \usepackage[T5]{fontenc}
+% See https://www.latex-project.org/help/documentation/encguide.pdf for other character sets
+
+% This assumes your files are encoded as UTF8
+\usepackage[utf8]{inputenc}
+
+% This is not strictly necessary, and may be commented out.
+% However, it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary, and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+
+\usepackage[english]{babel}
+\usepackage[autostyle, english = american]{csquotes}
+\MakeOuterQuote{"}
+
+\usepackage{tabularray}
+
+
+% If the title and author information does not fit in the area allocated, uncomment the following
+%
+%\setlength\titlebox{<dim>}
+%
+% and set <dim> to something 5cm or larger.
+
+\title{Wikipedia Summary Text Classificatiom}
+
+% Author information can be set in various styles:
+% For several authors from the same institution:
+% \author{Author 1 \and ... \and Author n \\
+%         Address line \\ ... \\ Address line}
+% if the names do not fit well on one line use
+%         Author 1 \\ {\bf Author 2} \\ ... \\ {\bf Author n} \\
+% For authors from different institutions:
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%         \And  ... \And
+%         Author n \\ Address line \\ ... \\ Address line}
+% To start a seperate ``row'' of authors use \AND, as in
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%         \AND
+%         Author 2 \\ Address line \\ ... \\ Address line \And
+%         Author 3 \\ Address line \\ ... \\ Address line}
+
+\author{Maggie Faust}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+In this project, I create a dataset for training a classifier to diferentiate between Wikipedia categories. The classifier sorts a wikipedia article into one of six categories based on its summary. I wanted to create something using Wikipedia because I like wikipedia and because I was already using the API for my capstone. I chose to make a classifier so I could reuse the code I made for Homework 2.
+
+\section{Dataset}
+
+In this section I will explain how the dataset was created. The dataset was created using the wikipediaapi extension. The dataset consists of words from the summaries of Wikepedia articles. The summary is the section at the beginning over the article. There are six categories that will be the classes for the classification model. The categories are "The arts," "Health," "History," "Science," "Religion," and "Technology." 
+
+Pages were sampled using a recursive method. The recursive method is called samplePages. At its most simplified, the way this method works is that it starts at one of the six categories and randomly samples a number of category members equal to the desired size of the sample. If the category member is an article, it is added to the final sample. If it is a category, we call the method on that category. This way, we sample pages that are members of the category, or one of its subcategories, or one of those categories' subcategories, etc. However, there are some more complications. The first complication is that, on Wikipedia, an article or category can be a member of more than one category. Because of this, the same article might be reachable from more than one of the six categories. From an NLP perspective, this means that articles can potentiallt belong to more than one of the classes. I was not able to fully acount for this but I was able to somewhat mitigate it. For each article or category I checked its supercategories, and those supercategories, and if any of those were one of the other five of the categories that are the classes it would be thrown out. I would have liked to checked more layers, but when I tried it drastically increased the time it took to generate the samples. Another thing I did to reduce the computation time was to add a maximum depth. The maximum depth was 4. When the maximum depth has been reached, if a category is sampled, it will sample another page from the current category instead of recursively calling SamplePages on the subcategory. This had the side effect that if it reached the maximum depth while in a category-only category, it would become stuck forever. Therefore, if it is about to go into the maximum depth, it checks if the next category is a category-only category, and ignores it if it is. Another problem is that it has to resample whenever a page that is neither an article or a category is picked. To reduce the time spent on pages that are neither articles or categories, I had it exclude categories which have "Category:Wikipedia images by subject" as a supercategory, so it was less likely to get stuck in a category that was majority images.
+
+For each category, two samples were made, on that was a sample of ten pages, and another that was a sample of twenty pages. I will call them the 10-samples and the 20-samples respectively. The tokens from each pages' summary in a sample are stored in the same file, because the datset is designed to be used with models that use a bag-of-words approach. Punctuation marks like periods and commas are considered their own tokens for this dataset. For the dev set, twenty summaries were chosen from each class for the model to label. 
+
+\section{Results}
+
+Table 1 shows the results of training two models on the training data. The two models are the ones I created for Homework 2, Naive Bayes and Logistic Regression. The models were trained with both the dataset of 10-samples and the dataset of 20-samples. You can see that the Naive Bayes model actually performed better on the 10-samples than the 20-samples. For logistic Regression, it performed better on the 20-samples, but not by much. Since it isn't a very good model, i will be ignoring it for the rest of the report. 
+
+If we look at the structure of the samples, we can better understand this disrepency. The size of a Wikipedia pages summary can vary wildly. Some pages have a summary that is one sentence long, while others can have a summary that is multiple paragraphs long. Because of this, the token length of the samples is not consistant. You can see this by looking at Table 2, which shows the token counts of each sample. You can see in the table that, on average, the 20-samples had three times as many tokens as the 10-samples. Some categories have larger sample sizes than others. Therefore, this might mean that the model is more accurate for some classes than others.
+
+In Table 3, the three most common keywords in each sample are shown. Punctuation and common words are ignored. It seems that, in general, the 10-samples top words contain more general words that correspond to to the topic of the corresponding category, while the 20-samples contain more specific vocabulary words that are only relevant to a few pages. For example the top words in the 10-sample for health are "health," "care," and "disease," whereas the top words in the 20-sample are "sleep," "tracking," and "may." I think the reason for this is that the 20-samples are more likely to contain a page with a significantly longer than average summary, which means that one page will be disproportionately represented in the sample, causing bias in the model. It is also possible that 20-samples are more likely to contain the same page twice, which would also cause a page to be over represented. 
+
+
+\begin{table}
+  \centering
+  \caption{Metrics of different models on different samples (The values for Logistic Regression are averages)}
+  \begin{tblr}{
+    width = \linewidth,
+    colspec = {Q[77]Q[194]Q[194]Q[235]Q[235]},
+  }
+            & Naive Bayes on 10-Samples & Naive Bayes on 20-Samples & Logistic Regression on 10-Samples & Logistic Regression on 20-Samples \\
+  Acc-uracy  & 0.567                     & 0.592                     & 0.231                             & 0.233                             \\
+  Pre-cision & 0.659                     & 0.623                     & 0.139                             & 0.216                             \\
+  Re-call    & 0.597                     & 0.592                     & 0.231                             & 0.233                             \\
+  F1        & 0.609                     & 0.607                     & 0.152                             & 0.207                             
+  \end{tblr}
+  \end{table}
+
+  % \usepackage{tabularray}
+  \begin{table}
+  \centering
+  \caption{Token counts of samples}
+  \begin{tblr}{
+    width = \linewidth,
+    colspec = {Q[154]Q[88]Q[94]Q[108]Q[106]Q[146]Q[112]Q[123]},
+  }
+             & Heal-th & Hist-ory & Rel-igion & Sci-ence & Tech-nology & The Arts & Average  \\
+  10-Samples & 1710   & 1979    & 1857     & 2221    & 1167       & 1445     & 1396.5   \\
+  20-Samples & 3101   & 2929    & 3492     & 3252    & 2947       & 3027     & 3124.667 
+  \end{tblr}
+  \end{table}
+
+\begin{longtblr}[
+    caption = {Top keywords of each sample},
+  ]{
+    width = \linewidth,
+    colspec = {Q[127]Q[121]Q[108]Q[135]Q[160]Q[175]Q[104]},
+  }
+             & Heal-th                                                                                                                                                                           & Hist-ory                                                                                                                                                                          & Rel-igion                                                                                                                                                                              & Sci-ence                                                                                                                                                                                  & Tech-nology                                                                                                                                                                                       & The Arts                                                                                                                                                                        \\
+  10-Samp-les & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}health\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}care\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}disease} & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}history\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}events\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}also} & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}religion\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}religious\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}prize} & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}science\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}lunar\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}factorization} & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}technology\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}entertainment\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}management} & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}art\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}music\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}arts}     \\
+  20-Samp-les & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}sleep\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}tracking\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}may}  & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}history\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}depp\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}heard}  & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}mormons\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}summa\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}one}        & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}science\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}scientific\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}web}     & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}technology\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}society\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}scene}            & {\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}art\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}social\\\labelitemi\hspace{\dimexpr\labelsep+0.5\tabcolsep}artists} 
+  \end{longtblr}
+
+\section{Conclusion}
+
+To conclude, it is possible to differentiate between Wikipedia categories based on a page's summary. One thing I would do if I had more time on this project would be to train a more sophisticated model than my own models on this dataset. I think it would give a better idea of the quality of the dataset. Another thing I would do if I had more time would be to make bigger samples such as samples of 50 or 100 samples. I wonder if larger samples will be able to overcome the shortcomings of the 20-samples.
+
+
+
+\end{document}

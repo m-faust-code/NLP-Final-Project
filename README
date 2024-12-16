@@ -1,0 +1,10 @@
+How to run the code:
+This code doesn't use command line arguments. You will have to change the code yourself. 
+
+To make data samples:
+Use dataset.py
+Run makeFiles to sample training data and makeDevSet for the dev set. Change n to change the number of pages sampled for each category. Then run CleanData on the generated files.
+
+To run a model:
+Use main.py
+To change the sample used, change the number on line 33. Use 10 for the 10-samples and 20 for the 20-samples. Change line 37 to change the model used. The model should have the same structure as HW2
